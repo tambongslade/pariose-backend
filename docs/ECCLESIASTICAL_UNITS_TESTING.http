@@ -1,0 +1,185 @@
+### Pariose Backend - Ecclesiastical Units API Tests
+### Use with REST Client extension in VS Code
+
+@baseUrl = http://localhost:3000/api/v1
+@contentType = application/json
+
+### Get Token
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "Test1234"
+}
+
+@token = {{login.response.body.access_token}}
+
+### 1. Create Diocese (Root Unit)
+POST {{baseUrl}}/ecclesiastical-units
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "libelle": "Diocese of Lyon",
+  "description": "Diocese covering the Lyon metropolitan area",
+  "code_type": 1,
+  "statut_canonique": "Active",
+  "adresse": "Place Bellecour, Lyon, France",
+  "latitude": 45.7640,
+  "longitude": 4.8357,
+  "date_creation_unite": "1900-01-01",
+  "fidele": "250000"
+}
+
+### 2. Create Parish (Child of Diocese)
+POST {{baseUrl}}/ecclesiastical-units
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "libelle": "St. Jean Parish",
+  "description": "Historic parish in old Lyon",
+  "code_type": 2,
+  "code_unite_parent": 1,
+  "statut_canonique": "Active",
+  "adresse": "Rue St. Jean, Lyon",
+  "latitude": 45.7630,
+  "longitude": 4.8270
+}
+
+### 3. Create Chapel (Grandchild)
+POST {{baseUrl}}/ecclesiastical-units
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "libelle": "Notre Dame Chapel",
+  "description": "Small chapel for prayer",
+  "code_type": 3,
+  "code_unite_parent": 2,
+  "latitude": 45.7650,
+  "longitude": 4.8300
+}
+
+### 4. List All Units
+GET {{baseUrl}}/ecclesiastical-units?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5. Search Units
+GET {{baseUrl}}/ecclesiastical-units?search=chapel
+Authorization: Bearer {{token}}
+
+### 6. Filter by Type
+GET {{baseUrl}}/ecclesiastical-units?code_type=2
+Authorization: Bearer {{token}}
+
+### 7. Filter by Parent (Get Parishes of Diocese 1)
+GET {{baseUrl}}/ecclesiastical-units?code_unite_parent=1
+Authorization: Bearer {{token}}
+
+### 8. Get Root Units Only
+GET {{baseUrl}}/ecclesiastical-units?code_unite_parent=0
+Authorization: Bearer {{token}}
+
+### 9. Location-Based Search (Within 10km)
+GET {{baseUrl}}/ecclesiastical-units?latitude=45.7640&longitude=4.8357&radius=10
+Authorization: Bearer {{token}}
+
+### 10. Get Hierarchy Tree
+GET {{baseUrl}}/ecclesiastical-units/hierarchy
+Authorization: Bearer {{token}}
+
+### 11. Get Specific Hierarchy
+GET {{baseUrl}}/ecclesiastical-units/hierarchy?rootId=1
+Authorization: Bearer {{token}}
+
+### 12. Get Statistics
+GET {{baseUrl}}/ecclesiastical-units/stats
+Authorization: Bearer {{token}}
+
+### 13. Get Specific Unit
+GET {{baseUrl}}/ecclesiastical-units/1
+Authorization: Bearer {{token}}
+
+### 14. Update Unit
+PATCH {{baseUrl}}/ecclesiastical-units/2
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Updated description with more details",
+  "statut_canonique": "Active - Major Restoration"
+}
+
+### 15. Subscribe to Unit
+POST {{baseUrl}}/ecclesiastical-units/2/subscribe
+Authorization: Bearer {{token}}
+
+### 16. Get My Subscriptions
+GET {{baseUrl}}/ecclesiastical-units/my-subscriptions
+Authorization: Bearer {{token}}
+
+### 17. Get Unit Subscribers
+GET {{baseUrl}}/ecclesiastical-units/2/subscribers
+Authorization: Bearer {{token}}
+
+### 18. Unsubscribe from Unit
+DELETE {{baseUrl}}/ecclesiastical-units/2/subscribe
+Authorization: Bearer {{token}}
+
+### 19. Try to Create Circular Reference (Should Fail)
+PATCH {{baseUrl}}/ecclesiastical-units/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "code_unite_parent": 2
+}
+
+### 20. Try to Delete Unit with Children (Should Fail)
+DELETE {{baseUrl}}/ecclesiastical-units/1
+Authorization: Bearer {{token}}
+
+### 21. Create Unit with Self as Parent (Should Fail)
+PATCH {{baseUrl}}/ecclesiastical-units/2
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "code_unite_parent": 2
+}
+
+### 22. Delete Leaf Unit (Should Succeed)
+DELETE {{baseUrl}}/ecclesiastical-units/3
+Authorization: Bearer {{token}}
+
+### 23. Create Unit as Regular User (Should Fail)
+# @name userLogin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "demouser",
+  "password": "Demo1234"
+}
+
+@userToken = {{userLogin.response.body.access_token}}
+
+POST {{baseUrl}}/ecclesiastical-units
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+{
+  "libelle": "Unauthorized Unit",
+  "code_type": 2
+}
+
+### 24. User Can View Units
+GET {{baseUrl}}/ecclesiastical-units
+Authorization: Bearer {{userToken}}
+
+### 25. User Can Subscribe
+POST {{baseUrl}}/ecclesiastical-units/2/subscribe
+Authorization: Bearer {{userToken}}

@@ -1,0 +1,137 @@
+### Pariose Backend - Users API Tests
+### Use with REST Client extension in VS Code
+
+@baseUrl = http://localhost:3000/api/v1
+@contentType = application/json
+
+### Get Admin Token
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "Test1234"
+}
+
+@token = {{login.response.body.access_token}}
+
+### 1. List All Users (Paginated)
+GET {{baseUrl}}/users?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 2. Search Users by Name
+GET {{baseUrl}}/users?search=test
+Authorization: Bearer {{token}}
+
+### 3. Filter Users by Role
+GET {{baseUrl}}/users?role=ADMIN
+Authorization: Bearer {{token}}
+
+### 4. Get User Statistics
+GET {{baseUrl}}/users/stats
+Authorization: Bearer {{token}}
+
+### 5. Get Specific User
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{token}}
+
+### 6. Create New User (Admin Only)
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "username": "newvolunteer",
+  "password": "Volunteer123",
+  "noms": "Volunteer",
+  "prenoms": "Mary",
+  "contact_1": "5559876543",
+  "addresse": "456 Church Avenue",
+  "roleIds": [5]
+}
+
+### 7. Update User Profile
+PATCH {{baseUrl}}/users/2
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "noms": "Updated",
+  "prenoms": "Name",
+  "contact_1": "5551112222"
+}
+
+### 8. Update Own Profile (as regular user)
+# First login as regular user
+# @name userLogin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "demouser",
+  "password": "Demo1234"
+}
+
+@userToken = {{userLogin.response.body.access_token}}
+
+PATCH {{baseUrl}}/users/2
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+{
+  "contact_1": "5559998888"
+}
+
+### 9. Assign Roles to User (Admin Only)
+POST {{baseUrl}}/users/2/roles
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "roleIds": [5, 6]
+}
+
+### 10. Try to assign roles as regular user (Should Fail)
+POST {{baseUrl}}/users/2/roles
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+{
+  "roleIds": [2]
+}
+
+### 11. Delete User (Admin Only)
+DELETE {{baseUrl}}/users/4
+Authorization: Bearer {{token}}
+
+### 12. Try to delete as regular user (Should Fail)
+DELETE {{baseUrl}}/users/1
+Authorization: Bearer {{userToken}}
+
+### 13. Try to view other user's profile as regular user (Should Fail)
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{userToken}}
+
+### 14. Create User with Multiple Roles
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "username": "deaconjames",
+  "password": "Deacon123",
+  "noms": "James",
+  "prenoms": "Deacon",
+  "contact_1": "5554443333",
+  "roleIds": [4, 5]
+}
+
+### 15. Update Password
+PATCH {{baseUrl}}/users/2
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+{
+  "password": "NewSecure123"
+}

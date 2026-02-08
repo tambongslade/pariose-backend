@@ -1,0 +1,71 @@
+### Pariose Backend - Authentication API Tests
+### Use with REST Client extension in VS Code
+
+@baseUrl = http://localhost:3000/api/v1
+@contentType = application/json
+
+### 1. Register new user
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser2",
+  "password": "Test1234",
+  "noms": "Doe",
+  "prenoms": "Jane",
+  "contact_1": "9876543210",
+  "addresse": "456 Oak Avenue"
+}
+
+### 2. Login with credentials
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "Test1234"
+}
+
+### 3. Get user profile (requires token from login)
+@token = {{login.response.body.access_token}}
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{token}}
+
+### 4. Refresh token
+POST {{baseUrl}}/auth/refresh
+Authorization: Bearer {{token}}
+
+### 5. Test with invalid credentials
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "WrongPassword"
+}
+
+### 6. Test registration with duplicate username
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser",
+  "password": "Test1234"
+}
+
+### 7. Test registration with weak password
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "username": "weakpass",
+  "password": "123"
+}
+
+### 8. Test profile without token (should fail)
+GET {{baseUrl}}/auth/profile
+
+### 9. Test profile with invalid token (should fail)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer invalid_token_here
